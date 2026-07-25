@@ -4,7 +4,11 @@ version = "0.1.0"
 description = "Multi-agent platform that extracts a traceable ArchiMate As-Is model from legacy system evidence."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "psycopg[binary]>=3.2",
+    "python-dotenv>=1.0",
+    "sqlalchemy>=2.0",
+]
 
 [dependency-groups]
 dev = [
@@ -31,6 +35,9 @@ select = ["E", "F", "I", "B", "N", "S", "UP"]
 [tool.black]
 line-length = 100
 target-version = ["py311"]
+
+[tool.poe.tasks]
+db-check = "python -m backend.db"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]
