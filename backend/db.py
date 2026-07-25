@@ -1,4 +1,5 @@
 from sqlalchemy import Engine, create_engine, text
+from sqlalchemy.orm import Session, sessionmaker
 
 from backend.config import database_url
 
@@ -7,6 +8,10 @@ IDENTITY_QUERY = "SELECT USER, current_database(), usesuper FROM pg_user WHERE u
 
 def create_db_engine() -> Engine:
     return create_engine(database_url(), pool_pre_ping=True)
+
+
+def create_session() -> Session:
+    return sessionmaker(bind=create_db_engine())()
 
 
 def check_connection() -> dict[str, object]:
