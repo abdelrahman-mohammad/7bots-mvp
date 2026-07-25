@@ -43,11 +43,9 @@ uv run poe db-check   # verify the app can reach Postgres
 
 ## Database
 
-Postgres runs in Docker. `docker-compose.yml` reads the `POSTGRES_*` variables from `.env`; the app
-connects with `DATABASE_URL`, so the two must agree.
+Postgres runs in Docker. `docker-compose.yml` reads the `POSTGRES_*` variables from `.env`; the app connects with `DATABASE_URL`, so the two must agree.
 
-`postgres` is the superuser, for administration only. The app connects as `app`, which is
-unprivileged and can only create tables in schema `public`.
+`postgres` is the superuser, for administration only. The app connects as `app`, which is unprivileged and can only create tables in schema `public`.
 
 ```
 docker compose up -d      # start
@@ -55,8 +53,7 @@ docker compose down       # stop, keep data
 docker compose down -v    # stop and destroy data
 ```
 
-Role creation only runs on an empty data directory, so changing `POSTGRES_APP_PASSWORD` takes effect
-only after `docker compose down -v`.
+Role creation only runs on an empty data directory, so changing `POSTGRES_APP_PASSWORD` takes effect only after `docker compose down -v`.
 
 ## Layout
 
