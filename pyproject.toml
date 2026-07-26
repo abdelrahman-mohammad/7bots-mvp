@@ -55,6 +55,7 @@ force-exclude = "backend/migrations/versions"
 db-check = "python -m backend.db"
 test = "pytest"
 trace-check = "python -m agents.trace_check"
+skill-test = "python -m agents.skill_smoke_test"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]

@@ -16,11 +16,17 @@ Reference data. Look values up here; do not rely on recall.
 
 ## Checking a relationship
 
-Grep the reference file rather than reading it; it is 3,000 lines.
+Grep the reference file rather than reading it; it is 3,000 lines. Search for the pair including the arrow and the trailing colon, and always pass `output_mode="content"`.
 
-    grep "^BusinessActor -> Node:" references/relationships.md
+    grep(pattern="BusinessActor -> Node:", path="references/relationships.md", output_mode="content")
 
-Returns `BusinessActor -> Node: Flow, Association, Triggering, Serving`, so Realization between those two is invalid. No output means no relationship of any kind is permitted.
+That returns `BusinessActor -> Node: Flow, Association, Triggering, Serving`, so Realization between those two is invalid.
+
+Without `output_mode="content"` grep returns only a file path. A bare path means the pair was found, not that the search failed.
+
+The search is a literal substring match, not a regular expression. `^`, `$`, `.*` and character classes match nothing, so never use them.
+
+If a search returns no match, check the spelling of both element names against the Element types table below before concluding anything. A misspelled name and a genuinely forbidden relationship both return nothing. Only once both names are confirmed does no match mean no relationship is permitted.
 
 Relationships are directional. `A -> B` says nothing about `B -> A`; look up both.
 

@@ -2,9 +2,11 @@
 
 Every permitted relationship between the 53 element types of the Motivation, Strategy, Business, Application, and Technology layers. 2809 pairs.
 
-Look up one element with grep rather than reading this file:
+Look up one pair with grep rather than reading this file:
 
-    grep "^ApplicationComponent ->" references/relationships.md
+    grep(pattern="ApplicationComponent -> DataObject:", output_mode="content")
+
+The search is a literal substring match, not a regular expression. Do not use `^`, `$` or `.*`. Without `output_mode="content"` only a file path is returned.
 
 A pair absent from this file is not a permitted relationship.
 
