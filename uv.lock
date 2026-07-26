@@ -16,6 +16,7 @@ dependencies = [
     { name = "langchain" },
     { name = "langchain-anthropic" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "sqlalchemy" },
 ]
@@ -36,6 +37,7 @@ requires-dist = [
     { name = "langchain", specifier = ">=1.0,<2.0" },
     { name = "langchain-anthropic" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "pydantic", specifier = ">=2.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "sqlalchemy", specifier = ">=2.0" },
 ]
