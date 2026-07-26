@@ -57,6 +57,7 @@ db-check = "python -m backend.db"
 test = "pytest"
 trace-check = "python -m agents.trace_check"
 skill-test = "python -m agents.skill_smoke_test"
+subagent-check = "python -m agents.subagent_check"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]
