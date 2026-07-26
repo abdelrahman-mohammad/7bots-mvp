@@ -1,9 +1,4 @@
-from pathlib import Path
-
-from deepagents import create_deep_agent
-from deepagents.backends.filesystem import FilesystemBackend
-
-from agents.models import get_model
+from agents.agent import create_agent
 
 QUESTIONS = [
     ("Which layer does Driver belong to?", "Motivation"),
@@ -22,15 +17,14 @@ QUESTIONS = [
 
 
 def main():
-    backend = FilesystemBackend(root_dir=str(Path(__file__).parent), virtual_mode=True)
-    agent = create_deep_agent(model=get_model(), backend=backend, skills=["/skills"])
+    agent = create_agent()
 
     for question, expected in QUESTIONS:
         prompt = question + " Answer in one word. No formatting."
         result = agent.invoke({"messages": [{"role": "user", "content": prompt}]})
         print(question)
         print(f"  expected: {expected}")
-        print(f"  answer:   {result['messages'][-1].content}\n")
+        print(f"  answer:   {result['messages'][-1].text}\n")
 
 
 if __name__ == "__main__":

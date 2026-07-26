@@ -1,12 +1,10 @@
-from deepagents import create_deep_agent
-
-from agents.models import get_model
+from agents.agent import create_agent
 
 
-def main() -> None:
-    agent = create_deep_agent(model=get_model())
-    result = agent.invoke({"messages": [{"role": "user", "content": "What is an LLM?"}]})
-    print(result["messages"][-1].content)
+def main():
+    agent = create_agent()
+    result = agent.invoke({"messages": [{"role": "user", "content": "Hello, are you working?"}]})
+    print(result["messages"][-1].text)
 
 
 if __name__ == "__main__":
