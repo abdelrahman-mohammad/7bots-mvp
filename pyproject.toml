@@ -64,6 +64,7 @@ code-check = "python -m agents.element_check code-analyzer application"
 infra-check = "python -m agents.element_check infra-analyzer technology"
 integration-check = "python -m agents.relationship_check"
 reconcile = "python -m agents.reconciler"
+validate = "python -m agents.validator"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]
