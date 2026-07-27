@@ -1,0 +1,5 @@
+ci_id,name,type,notes
+SRV-0142,SHIPDB PRIMARY,Server,PostgreSQL 12 database for ShipTrack
+SRV-0210,SHIPTRACK APP 01,Server,nginx fronting the booking and tracking services
+DEV-0031,Depot scanner fleet,Handheld device,Used for consignment scanning
+SVC-0007,Nightly scan archive job,Service,Copies scan events to the archive bucket

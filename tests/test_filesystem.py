@@ -5,13 +5,13 @@ from backend.config import require
 
 
 def test_evidence_can_be_read():
-    result = create_backend().read("/evidence/README.md")
+    result = create_backend().read("/evidence/infra/main.tf")
     assert result.error is None
-    assert "Evidence" in result.file_data["content"]  # type: ignore
+    assert "shipdb-primary" in result.file_data["content"]  # type: ignore
 
 
 def test_evidence_can_be_searched():
-    result = create_backend().grep(pattern="ingestion", path="/evidence")
+    result = create_backend().grep(pattern="consignment", path="/evidence")
     assert result.matches
 
 
@@ -22,5 +22,5 @@ def test_writing_to_evidence_is_refused():
 
 
 def test_editing_evidence_is_refused():
-    result = create_backend().edit("/evidence/README.md", "Evidence", "Tampered")
+    result = create_backend().edit("/evidence/infra/main.tf", "shipdb-primary", "tampered")
     assert result.error is not None

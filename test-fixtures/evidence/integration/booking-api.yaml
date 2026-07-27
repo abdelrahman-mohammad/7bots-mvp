@@ -1,0 +1,13 @@
+openapi: 3.0.0
+info:
+  title: ShipTrack Booking API
+  description: Public entry point into ShipTrack. Served by booking-service.
+paths:
+  /consignments:
+    post:
+      summary: Book a consignment
+      description: Called by the customer portal.
+  /consignments/{consignment_id}/tracking:
+    get:
+      summary: Read the scan events for a consignment
+      description: Proxied to tracking-service.
