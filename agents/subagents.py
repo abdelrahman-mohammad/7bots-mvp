@@ -1,48 +1,65 @@
 STUB_PROMPT = "Respond with the literal text 'stub-ok' and nothing else."
 
-STRATEGY_PROMPT = """You extract Motivation and Strategy layer ArchiMate elements from evidence documents.
 
-Read every file in /evidence/motivation/ and /evidence/strategy/.
+def extraction_prompt(layers, folders, types, output, layer_value, locator):
+    return f"""You extract {layers} layer ArchiMate elements from evidence documents.
 
-Load the archimate-metamodel skill and use it to choose valid types. Motivation layer: Stakeholder, Driver, Assessment, Goal, Outcome, Principle, Requirement, Constraint. Strategy layer: Resource, Capability, CourseOfAction, ValueStream.
+Read every file in {folders}.
 
-Your task names the system id. Write one JSON file per element to /systems/<system-id>/as-is/motivation/<id>.json or /systems/<system-id>/as-is/strategy/<id>.json, with these fields and no others:
+Load the archimate-metamodel skill and use it to choose valid types: {types}.
 
-{
+Your task names the system id. Write one JSON file per element to {output}, with these fields and no others:
+
+{{
   "id": "kebab-case-id, unique, same as the file name",
-  "layer": "motivation or strategy",
+  "layer": "{layer_value}",
   "archimate_type": "one of the types listed above",
   "name": "short name",
   "documentation": "one or two sentences",
   "confidence": "observed if the evidence states it outright, inferred if you concluded it",
-  "evidence": [{"source_type": "document", "locator": "/evidence/... path you read", "excerpt": "sentence copied from that file"}]
-}
+  "evidence": [{{"source_type": "document", "locator": "{locator}", "excerpt": "sentence copied from that file"}}]
+}}
 
 Copy each excerpt character for character from the file. Never paraphrase it, and never quote a file you did not read.
 
 If you cannot ground an element in a specific excerpt, do not write it. Append one line naming the element and the reason to /systems/<system-id>/as-is/rejected.md instead. That file is only for elements you did not write."""
 
-BUSINESS_PROMPT = """You extract Business layer ArchiMate elements from evidence documents.
 
-Read every file in /evidence/business/.
+STRATEGY_PROMPT = extraction_prompt(
+    layers="Motivation and Strategy",
+    folders="/evidence/motivation/ and /evidence/strategy/",
+    types="Stakeholder, Driver, Assessment, Goal, Outcome, Principle, Requirement, Constraint for the Motivation layer, and Resource, Capability, CourseOfAction, ValueStream for the Strategy layer",
+    output="/systems/<system-id>/as-is/motivation/<id>.json or /systems/<system-id>/as-is/strategy/<id>.json",
+    layer_value="motivation or strategy",
+    locator="/evidence/... path you read",
+)
 
-Load the archimate-metamodel skill and use it to choose valid types: BusinessActor, BusinessRole, BusinessProcess, BusinessFunction, BusinessService.
+BUSINESS_PROMPT = extraction_prompt(
+    layers="Business",
+    folders="/evidence/business/",
+    types="BusinessActor, BusinessRole, BusinessProcess, BusinessFunction, BusinessService",
+    output="/systems/<system-id>/as-is/business/<id>.json",
+    layer_value="business",
+    locator="/evidence/... path you read",
+)
 
-Your task names the system id. Write one JSON file per element to /systems/<system-id>/as-is/business/<id>.json, with these fields and no others:
+APPLICATION_PROMPT = (
+    extraction_prompt(
+        layers="Application",
+        folders="/evidence/code/",
+        types="ApplicationComponent, ApplicationService, ApplicationInterface, DataObject",
+        output="/systems/<system-id>/as-is/application/<id>.json",
+        layer_value="application",
+        locator="/evidence/code/... path followed by the line number, for example /evidence/code/schema.sql:15",
+    )
+    + """
 
-{
-  "id": "kebab-case-id, unique, same as the file name",
-  "layer": "business",
-  "archimate_type": "one of the types listed above",
-  "name": "short name",
-  "documentation": "one or two sentences",
-  "confidence": "observed if the evidence states it outright, inferred if you concluded it",
-  "evidence": [{"source_type": "document", "locator": "/evidence/... path you read", "excerpt": "sentence copied from that file"}]
-}
+Use grep and glob to find service entry points, config files and schema definitions. Search for what you need instead of reading whole files.
 
-Copy each excerpt character for character from the file. Never paraphrase it, and never quote a file you did not read.
+Quote exactly one line as the excerpt and give that line's number. Read the file first so the number is right.
 
-If you cannot ground an element in a specific excerpt, do not write it. Append one line naming the element and the reason to /systems/<system-id>/as-is/rejected.md instead. That file is only for elements you did not write."""
+When you have finished, write the list of files you actually read to /systems/<system-id>/as-is/files-read.md, one path per line."""
+)
 
 SUBAGENTS = [
     {
@@ -60,7 +77,8 @@ SUBAGENTS = [
     {
         "name": "code-analyzer",
         "description": "Extracts Application layer elements from source code repositories and database schema files.",
-        "system_prompt": STUB_PROMPT,
+        "system_prompt": APPLICATION_PROMPT,
+        "skills": ["/skills"],
     },
     {
         "name": "infra-analyzer",

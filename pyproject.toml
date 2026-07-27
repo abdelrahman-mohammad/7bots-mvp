@@ -60,6 +60,7 @@ skill-test = "python -m agents.skill_smoke_test"
 subagent-check = "python -m agents.subagent_check"
 strategy-check = "python -m agents.element_check strategy-analyst motivation strategy"
 business-check = "python -m agents.element_check business-analyst business"
+code-check = "python -m agents.element_check code-analyzer application"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]

@@ -20,8 +20,20 @@ def layer_dir(layer):
 
 
 def evidence_file(locator):
-    relative = locator.replace("/evidence/", "", 1).lstrip("/")
+    relative = locator.split(":")[0].replace("/evidence/", "", 1).lstrip("/")
     return Path(require("EVIDENCE_PATH")) / relative
+
+
+def cited_text(source, locator):
+    text = source.read_text(encoding="utf-8")
+    if ":" not in locator:
+        return text
+
+    first, _, last = locator.split(":")[1].partition("-")
+    if not first.isdigit():
+        return ""
+    end = int(last) if last.isdigit() else int(first)
+    return "\n".join(text.splitlines()[int(first) - 1 : end])
 
 
 def check_element(path):
@@ -34,14 +46,15 @@ def check_element(path):
         source = evidence_file(evidence.locator)
         if not source.exists():
             return f"UNGROUNDED {path.name}: no such file {evidence.locator}"
-        if evidence.excerpt not in source.read_text(encoding="utf-8"):
-            return f"UNGROUNDED {path.name}: excerpt is not verbatim in {evidence.locator}"
+        if evidence.excerpt not in cited_text(source, evidence.locator):
+            return f"UNGROUNDED {path.name}: excerpt is not verbatim at {evidence.locator}"
 
     return f"ok {path.name}: {element.archimate_type} {element.name}"
 
 
 def run(subagent, layers):
     (as_is_dir() / "rejected.md").unlink(missing_ok=True)
+    (as_is_dir() / "files-read.md").unlink(missing_ok=True)
     for layer in layers:
         shutil.rmtree(layer_dir(layer), ignore_errors=True)
         layer_dir(layer).mkdir(parents=True)
@@ -56,6 +69,11 @@ def run(subagent, layers):
         for path in files:
             print("  " + check_element(path))
         total += len(files)
+
+    read_log = as_is_dir() / "files-read.md"
+    if read_log.exists():
+        print("\nfiles read:")
+        print(read_log.read_text(encoding="utf-8").strip())
     return total
 
 
