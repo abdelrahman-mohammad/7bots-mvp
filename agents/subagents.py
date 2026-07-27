@@ -43,23 +43,34 @@ BUSINESS_PROMPT = extraction_prompt(
     locator="/evidence/... path you read",
 )
 
-APPLICATION_PROMPT = (
-    extraction_prompt(
-        layers="Application",
-        folders="/evidence/code/",
-        types="ApplicationComponent, ApplicationService, ApplicationInterface, DataObject",
-        output="/systems/<system-id>/as-is/application/<id>.json",
-        layer_value="application",
-        locator="/evidence/code/... path followed by the line number, for example /evidence/code/schema.sql:15",
-    )
-    + """
 
-Use grep and glob to find service entry points, config files and schema definitions. Search for what you need instead of reading whole files.
+def line_level_rules(what):
+    return f"""
+
+Use grep and glob to find {what}. Search for what you need instead of reading whole files.
 
 Quote exactly one line as the excerpt and give that line's number. Read the file first so the number is right.
 
 When you have finished, write the list of files you actually read to /systems/<system-id>/as-is/files-read.md, one path per line."""
-)
+
+
+APPLICATION_PROMPT = extraction_prompt(
+    layers="Application",
+    folders="/evidence/code/",
+    types="ApplicationComponent, ApplicationService, ApplicationInterface, DataObject",
+    output="/systems/<system-id>/as-is/application/<id>.json",
+    layer_value="application",
+    locator="/evidence/code/... path followed by the line number, for example /evidence/code/schema.sql:15",
+) + line_level_rules("service entry points, config files and schema definitions")
+
+TECHNOLOGY_PROMPT = extraction_prompt(
+    layers="Technology",
+    folders="/evidence/infra/",
+    types="Node, Device, SystemSoftware, TechnologyService, Artifact",
+    output="/systems/<system-id>/as-is/technology/<id>.json",
+    layer_value="technology",
+    locator="/evidence/infra/... path followed by the line number, for example /evidence/infra/main.tf:5",
+) + line_level_rules("resource definitions, host names and CMDB rows")
 
 SUBAGENTS = [
     {
@@ -83,7 +94,8 @@ SUBAGENTS = [
     {
         "name": "infra-analyzer",
         "description": "Extracts Technology layer elements from infrastructure as code files and CMDB exports.",
-        "system_prompt": STUB_PROMPT,
+        "system_prompt": TECHNOLOGY_PROMPT,
+        "skills": ["/skills"],
     },
     {
         "name": "integration-mapper",
