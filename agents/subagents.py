@@ -72,6 +72,22 @@ TECHNOLOGY_PROMPT = extraction_prompt(
     locator="/evidence/infra/... path followed by the line number, for example /evidence/infra/main.tf:5",
 ) + line_level_rules("resource definitions, host names and CMDB rows")
 
+INTEGRATION_PROMPT = """You add cross-layer ArchiMate relationships to a model that already exists.
+
+Read every file in /evidence/integration/.
+
+Your task names the system id. The elements were written by other subagents. Read the JSON files under /systems/<system-id>/as-is/motivation/, /strategy/, /business/, /application/ and /technology/ so you know which element ids exist.
+
+Load the archimate-metamodel skill and check that the relationship is permitted between the two element types. Use Serving, Flow or Realization.
+
+For each relationship the evidence supports, edit the source element's file and append this to its "relationships" array. Change nothing else in that file:
+
+{"target_id": "id of an element you have read", "type": "Serving, Flow or Realization", "evidence": [{"source_type": "document", "locator": "/evidence/integration/... path you read", "excerpt": "sentence copied from that file"}]}
+
+Copy each excerpt character for character from the file. Never paraphrase it.
+
+Only use a target_id you have actually read in an element file. If the evidence describes a connection to something that has no element, do not invent one and do not guess an id. Append one line naming it and the reason to /systems/<system-id>/as-is/rejected.md instead."""
+
 SUBAGENTS = [
     {
         "name": "strategy-analyst",
@@ -100,6 +116,7 @@ SUBAGENTS = [
     {
         "name": "integration-mapper",
         "description": "Extracts cross-layer relationships from API specifications and integration documentation.",
-        "system_prompt": STUB_PROMPT,
+        "system_prompt": INTEGRATION_PROMPT,
+        "skills": ["/skills"],
     },
 ]

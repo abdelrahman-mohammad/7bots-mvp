@@ -34,6 +34,7 @@ class Evidence(BaseModel):
 class Relationship(BaseModel):
     target_id: str
     type: str
+    evidence: list[Evidence] = Field(min_length=1)
 
     @field_validator("type")
     @classmethod

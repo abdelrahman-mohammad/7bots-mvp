@@ -39,13 +39,32 @@ def test_unknown_archimate_type_fails():
         ModelElement(**element(archimate_type="BusinessComponent"))
 
 
+def relationship(**overrides):
+    data = {
+        "target_id": "data-claim-record",
+        "type": "Access",
+        "evidence": [
+            {
+                "source_type": "code",
+                "locator": "src/payments/service.py:12",
+                "excerpt": "claim = ClaimRecord.objects.get(pk=claim_id)",
+            }
+        ],
+    }
+    data.update(overrides)
+    return data
+
+
 def test_unknown_relationship_type_fails():
-    relationships = [{"target_id": "data-claim-record", "type": "Consumes"}]
     with pytest.raises(ValidationError):
-        ModelElement(**element(relationships=relationships))
+        ModelElement(**element(relationships=[relationship(type="Consumes")]))
 
 
 def test_valid_relationship_is_accepted():
-    relationships = [{"target_id": "data-claim-record", "type": "Access"}]
-    parsed = ModelElement(**element(relationships=relationships))
+    parsed = ModelElement(**element(relationships=[relationship()]))
     assert parsed.relationships[0].type == "Access"
+
+
+def test_relationship_without_evidence_fails():
+    with pytest.raises(ValidationError):
+        ModelElement(**element(relationships=[relationship(evidence=[])]))

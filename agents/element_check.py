@@ -36,18 +36,25 @@ def cited_text(source, locator):
     return "\n".join(text.splitlines()[int(first) - 1 : end])
 
 
+def grounding_error(evidence_list):
+    for evidence in evidence_list:
+        source = evidence_file(evidence.locator)
+        if not source.exists():
+            return f"no such file {evidence.locator}"
+        if evidence.excerpt not in cited_text(source, evidence.locator):
+            return f"excerpt is not verbatim at {evidence.locator}"
+    return None
+
+
 def check_element(path):
     try:
         element = ModelElement.model_validate_json(path.read_text(encoding="utf-8"))
     except ValidationError as error:
         return f"INVALID {path.name}: {error.errors()[0]['msg']}"
 
-    for evidence in element.evidence:
-        source = evidence_file(evidence.locator)
-        if not source.exists():
-            return f"UNGROUNDED {path.name}: no such file {evidence.locator}"
-        if evidence.excerpt not in cited_text(source, evidence.locator):
-            return f"UNGROUNDED {path.name}: excerpt is not verbatim at {evidence.locator}"
+    reason = grounding_error(element.evidence)
+    if reason:
+        return f"UNGROUNDED {path.name}: {reason}"
 
     return f"ok {path.name}: {element.archimate_type} {element.name}"
 

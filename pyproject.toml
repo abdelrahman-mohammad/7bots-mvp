@@ -62,6 +62,7 @@ strategy-check = "python -m agents.element_check strategy-analyst motivation str
 business-check = "python -m agents.element_check business-analyst business"
 code-check = "python -m agents.element_check code-analyzer application"
 infra-check = "python -m agents.element_check infra-analyzer technology"
+integration-check = "python -m agents.relationship_check"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]
