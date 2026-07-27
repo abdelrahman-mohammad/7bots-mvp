@@ -1,4 +1,5 @@
 import shutil
+import sys
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -8,8 +9,6 @@ from agents.schema import ModelElement
 from backend.config import require
 
 SYSTEM_ID = "shiptrack"
-LAYERS = ["motivation", "strategy"]
-TASK = f"Use the task tool to call strategy-analyst. The system id is {SYSTEM_ID}."
 
 
 def as_is_dir():
@@ -41,16 +40,17 @@ def check_element(path):
     return f"ok {path.name}: {element.archimate_type} {element.name}"
 
 
-def run():
+def run(subagent, layers):
     (as_is_dir() / "rejected.md").unlink(missing_ok=True)
-    for layer in LAYERS:
+    for layer in layers:
         shutil.rmtree(layer_dir(layer), ignore_errors=True)
         layer_dir(layer).mkdir(parents=True)
 
-    create_agent().invoke({"messages": [{"role": "user", "content": TASK}]})
+    task = f"Use the task tool to call {subagent}. Give it this task: extract elements for system id {SYSTEM_ID}, following your system prompt."
+    create_agent().invoke({"messages": [{"role": "user", "content": task}]})
 
     total = 0
-    for layer in LAYERS:
+    for layer in layers:
         files = sorted(layer_dir(layer).glob("*.json"))
         print(f"\n{layer}: {len(files)} elements")
         for path in files:
@@ -60,8 +60,10 @@ def run():
 
 
 if __name__ == "__main__":
+    subagent = sys.argv[1]
+    layers = sys.argv[2:]
     print("=== run 1 ===")
-    first = run()
+    first = run(subagent, layers)
     print("\n=== run 2 ===")
-    second = run()
+    second = run(subagent, layers)
     print(f"\nrun 1: {first} elements, run 2: {second}, difference {abs(first - second)}")

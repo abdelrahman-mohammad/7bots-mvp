@@ -22,6 +22,28 @@ Copy each excerpt character for character from the file. Never paraphrase it, an
 
 If you cannot ground an element in a specific excerpt, do not write it. Append one line naming the element and the reason to /systems/<system-id>/as-is/rejected.md instead. That file is only for elements you did not write."""
 
+BUSINESS_PROMPT = """You extract Business layer ArchiMate elements from evidence documents.
+
+Read every file in /evidence/business/.
+
+Load the archimate-metamodel skill and use it to choose valid types: BusinessActor, BusinessRole, BusinessProcess, BusinessFunction, BusinessService.
+
+Your task names the system id. Write one JSON file per element to /systems/<system-id>/as-is/business/<id>.json, with these fields and no others:
+
+{
+  "id": "kebab-case-id, unique, same as the file name",
+  "layer": "business",
+  "archimate_type": "one of the types listed above",
+  "name": "short name",
+  "documentation": "one or two sentences",
+  "confidence": "observed if the evidence states it outright, inferred if you concluded it",
+  "evidence": [{"source_type": "document", "locator": "/evidence/... path you read", "excerpt": "sentence copied from that file"}]
+}
+
+Copy each excerpt character for character from the file. Never paraphrase it, and never quote a file you did not read.
+
+If you cannot ground an element in a specific excerpt, do not write it. Append one line naming the element and the reason to /systems/<system-id>/as-is/rejected.md instead. That file is only for elements you did not write."""
+
 SUBAGENTS = [
     {
         "name": "strategy-analyst",
@@ -32,7 +54,8 @@ SUBAGENTS = [
     {
         "name": "business-analyst",
         "description": "Extracts Business layer elements from documents, wikis, and interview transcripts.",
-        "system_prompt": STUB_PROMPT,
+        "system_prompt": BUSINESS_PROMPT,
+        "skills": ["/skills"],
     },
     {
         "name": "code-analyzer",
