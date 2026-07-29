@@ -3,6 +3,7 @@ import hmac
 import json
 
 from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import require
 from backend.db import create_session
@@ -17,6 +18,13 @@ from backend.repository.elements import get_element, list_elements, upsert_eleme
 from backend.repository.jobs import create_job, get_job
 
 app = FastAPI(title="7bots Phase 1 API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[require("FRONTEND_ORIGIN")],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def session_scope():
