@@ -2,15 +2,31 @@ import hashlib
 import hmac
 import json
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
 
 from backend.config import require
 from backend.db import create_session
+from backend.jobs import run_job
 from backend.model_repo import git
 from backend.repository.artifact_versions import get_artifact_version, set_approval
 from backend.repository.elements import upsert_element
+from backend.repository.jobs import create_job
 
 app = FastAPI()
+
+
+@app.post("/systems/{system_id}/ingest")
+def trigger_ingestion(system_id: str, background: BackgroundTasks):
+    session = create_session()
+    try:
+        job = create_job(session, system_id, phase="1")
+        session.commit()
+        job_id = job.id
+    finally:
+        session.close()
+
+    background.add_task(run_job, job_id, system_id, require("EVIDENCE_PATH"))
+    return {"job_id": job_id, "status": "queued"}
 
 
 def signature_matches(body, signature):
