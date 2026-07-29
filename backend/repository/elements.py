@@ -31,6 +31,16 @@ def get_element(session: Session, element_id: str) -> ModelElementIndex | None:
     return session.get(ModelElementIndex, element_id)
 
 
+def delete_elements_missing_from(session: Session, system_id: str, keep_ids: set[str]) -> list[str]:
+    removed = []
+    for element in list_elements(session, system_id):
+        if element.id not in keep_ids:
+            removed.append(element.id)
+            session.delete(element)
+    session.flush()
+    return removed
+
+
 def list_elements(
     session: Session, system_id: str, layer: str | None = None
 ) -> list[ModelElementIndex]:

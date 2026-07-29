@@ -14,7 +14,12 @@ from backend.repository.artifact_versions import (
     list_artifact_versions,
     set_approval,
 )
-from backend.repository.elements import get_element, list_elements, upsert_element
+from backend.repository.elements import (
+    delete_elements_missing_from,
+    get_element,
+    list_elements,
+    upsert_element,
+)
 from backend.repository.jobs import create_job, get_job
 
 app = FastAPI(title="7bots Phase 1 API")
@@ -122,10 +127,12 @@ def signature_matches(body, signature):
 def refresh_index(session, system_id, commit_sha):
     git("fetch", "origin", "main")
     listing = git("ls-tree", "-r", "--name-only", "origin/main", f"systems/{system_id}/as-is/")
+    seen = set()
     for path in listing.splitlines():
         if not path.endswith(".json"):
             continue
         element = json.loads(git("show", f"origin/main:{path}"))
+        seen.add(element["id"])
         upsert_element(
             session,
             element_id=element["id"],
@@ -136,6 +143,7 @@ def refresh_index(session, system_id, commit_sha):
             git_path=path,
             current_commit=commit_sha,
         )
+    delete_elements_missing_from(session, system_id, seen)
 
 
 def approve(head_sha, merge_sha):

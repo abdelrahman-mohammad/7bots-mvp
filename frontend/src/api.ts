@@ -10,6 +10,29 @@ export type ElementSummary = {
   current_commit: string
 }
 
+export type Evidence = {
+  source_type: string
+  locator: string
+  excerpt: string
+}
+
+export type Relationship = {
+  target_id: string
+  type: string
+  evidence: Evidence[]
+}
+
+export type ElementDetail = {
+  id: string
+  layer: string
+  archimate_type: string
+  name: string
+  documentation: string
+  confidence: string
+  evidence: Evidence[]
+  relationships?: Relationship[]
+}
+
 export type Job = {
   id: number
   system_id: string
@@ -49,7 +72,7 @@ export function listElements(systemId: string, layer?: string): Promise<ElementS
   return request("/systems/" + systemId + "/elements" + query)
 }
 
-export function getElement(elementId: string): Promise<unknown> {
+export function getElement(elementId: string): Promise<ElementDetail> {
   return request("/elements/" + elementId)
 }
 
