@@ -8,15 +8,13 @@ from agents.agent import create_agent
 from agents.schema import ModelElement
 from backend.config import require
 
-SYSTEM_ID = "shiptrack"
+
+def as_is_dir(system_id):
+    return Path(require("MODEL_REPO_PATH")) / "systems" / system_id / "as-is"
 
 
-def as_is_dir():
-    return Path(require("MODEL_REPO_PATH")) / "systems" / SYSTEM_ID / "as-is"
-
-
-def layer_dir(layer):
-    return as_is_dir() / layer
+def layer_dir(system_id, layer):
+    return as_is_dir(system_id) / layer
 
 
 def evidence_file(locator):
@@ -59,25 +57,25 @@ def check_element(path):
     return f"ok {path.name}: {element.archimate_type} {element.name}"
 
 
-def run(subagent, layers):
-    (as_is_dir() / "rejected.md").unlink(missing_ok=True)
-    (as_is_dir() / "files-read.md").unlink(missing_ok=True)
+def run(system_id, subagent, layers):
+    (as_is_dir(system_id) / "rejected.md").unlink(missing_ok=True)
+    (as_is_dir(system_id) / "files-read.md").unlink(missing_ok=True)
     for layer in layers:
-        shutil.rmtree(layer_dir(layer), ignore_errors=True)
-        layer_dir(layer).mkdir(parents=True)
+        shutil.rmtree(layer_dir(system_id, layer), ignore_errors=True)
+        layer_dir(system_id, layer).mkdir(parents=True)
 
-    task = f"Use the task tool to call {subagent}. Give it this task: extract elements for system id {SYSTEM_ID}, following your system prompt."
+    task = f"Use the task tool to call {subagent}. Give it this task: extract elements for system id {system_id}, following your system prompt."
     create_agent().invoke({"messages": [{"role": "user", "content": task}]})
 
     total = 0
     for layer in layers:
-        files = sorted(layer_dir(layer).glob("*.json"))
+        files = sorted(layer_dir(system_id, layer).glob("*.json"))
         print(f"\n{layer}: {len(files)} elements")
         for path in files:
             print("  " + check_element(path))
         total += len(files)
 
-    read_log = as_is_dir() / "files-read.md"
+    read_log = as_is_dir(system_id) / "files-read.md"
     if read_log.exists():
         print("\nfiles read:")
         print(read_log.read_text(encoding="utf-8").strip())
@@ -85,10 +83,10 @@ def run(subagent, layers):
 
 
 if __name__ == "__main__":
-    subagent = sys.argv[1]
-    layers = sys.argv[2:]
+    system_id, subagent = sys.argv[1], sys.argv[2]
+    layers = sys.argv[3:]
     print("=== run 1 ===")
-    first = run(subagent, layers)
+    first = run(system_id, subagent, layers)
     print("\n=== run 2 ===")
-    second = run(subagent, layers)
+    second = run(system_id, subagent, layers)
     print(f"\nrun 1: {first} elements, run 2: {second}, difference {abs(first - second)}")

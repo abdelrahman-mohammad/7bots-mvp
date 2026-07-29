@@ -1,5 +1,6 @@
 import difflib
 import itertools
+import sys
 
 from agents.element_check import as_is_dir, layer_dir
 from agents.relationship_check import LAYERS, load_elements
@@ -60,22 +61,22 @@ def reconcile(elements):
     return merged, find_conflicts(merged)
 
 
-def main():
-    elements = load_elements()
+def main(system_id):
+    elements = load_elements(system_id)
     merged, conflicts = reconcile(elements)
 
     for layer in LAYERS:
-        for path in layer_dir(layer).glob("*.json"):
+        for path in layer_dir(system_id, layer).glob("*.json"):
             path.unlink()
 
     for element in merged:
-        path = layer_dir(element.layer) / f"{element.id}.json"
+        path = layer_dir(system_id, element.layer) / f"{element.id}.json"
         path.write_text(element.model_dump_json(indent=2), encoding="utf-8")
 
     lines = ["# Reconciliation conflicts", ""]
     for conflict in conflicts:
         lines.append(f"- {conflict}")
-    (as_is_dir() / "conflicts.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (as_is_dir(system_id) / "conflicts.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     print(
         f"{len(elements)} elements in, {len(merged)} after merge, {len(conflicts)} conflicts flagged"
@@ -85,4 +86,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])

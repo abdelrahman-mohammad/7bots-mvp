@@ -81,21 +81,24 @@ def build_report(elements, problems):
     return "\n".join(lines) + "\n"
 
 
-def main():
+def validate(system_id):
     raw_elements = []
     for layer in LAYERS:
-        for path in sorted(layer_dir(layer).glob("*.json")):
+        for path in sorted(layer_dir(system_id, layer).glob("*.json")):
             raw_elements.append((path.name, json.loads(path.read_text(encoding="utf-8"))))
 
     elements, problems = check(raw_elements)
     report = build_report(elements, problems)
+    (as_is_dir(system_id) / "validation-report.md").write_text(report, encoding="utf-8")
+    return report, problems
 
-    (as_is_dir() / "validation-report.md").write_text(report, encoding="utf-8")
+
+def main(system_id):
+    report, problems = validate(system_id)
     print(report)
-
     if problems:
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])
