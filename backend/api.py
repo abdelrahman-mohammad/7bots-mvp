@@ -2,31 +2,107 @@ import hashlib
 import hmac
 import json
 
-from fastapi import BackgroundTasks, FastAPI, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request
 
 from backend.config import require
 from backend.db import create_session
 from backend.jobs import run_job
 from backend.model_repo import git
-from backend.repository.artifact_versions import get_artifact_version, set_approval
-from backend.repository.elements import upsert_element
-from backend.repository.jobs import create_job
+from backend.repository.artifact_versions import (
+    get_artifact_version,
+    list_artifact_versions,
+    set_approval,
+)
+from backend.repository.elements import get_element, list_elements, upsert_element
+from backend.repository.jobs import create_job, get_job
 
-app = FastAPI()
+app = FastAPI(title="7bots Phase 1 API")
 
 
-@app.post("/systems/{system_id}/ingest")
-def trigger_ingestion(system_id: str, background: BackgroundTasks):
+def session_scope():
     session = create_session()
     try:
-        job = create_job(session, system_id, phase="1")
-        session.commit()
-        job_id = job.id
+        yield session
     finally:
         session.close()
 
-    background.add_task(run_job, job_id, system_id, require("EVIDENCE_PATH"))
-    return {"job_id": job_id, "status": "queued"}
+
+def require_api_key(x_api_key: str = Header(default="")):
+    if not hmac.compare_digest(x_api_key, require("API_KEY")):
+        raise HTTPException(status_code=401, detail="invalid api key")
+
+
+api = APIRouter(dependencies=[Depends(require_api_key)])
+
+
+def element_summary(element):
+    return {
+        "id": element.id,
+        "layer": element.layer,
+        "archimate_type": element.archimate_type,
+        "name": element.name,
+        "git_path": element.git_path,
+        "current_commit": element.current_commit,
+    }
+
+
+@api.post("/systems/{system_id}/ingest")
+def trigger_ingestion(system_id: str, background: BackgroundTasks, session=Depends(session_scope)):
+    job = create_job(session, system_id, phase="1")
+    session.commit()
+    background.add_task(run_job, job.id, system_id, require("EVIDENCE_PATH"))
+    return {"job_id": job.id, "status": "queued"}
+
+
+@api.get("/jobs/{job_id}")
+def read_job(job_id: int, session=Depends(session_scope)):
+    job = get_job(session, job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="no such job")
+    return {
+        "id": job.id,
+        "system_id": job.system_id,
+        "status": job.status,
+        "run_id": job.run_id,
+        "error_message": job.error_message,
+        "started_at": job.started_at,
+        "finished_at": job.finished_at,
+    }
+
+
+@api.get("/systems/{system_id}/elements")
+def read_elements(system_id: str, layer: str | None = None, session=Depends(session_scope)):
+    return [element_summary(element) for element in list_elements(session, system_id, layer)]
+
+
+@api.get("/elements/{element_id}")
+def read_element(element_id: str, session=Depends(session_scope)):
+    element = get_element(session, element_id)
+    if element is None:
+        raise HTTPException(status_code=404, detail="no such element")
+    try:
+        return json.loads(git("show", f"origin/main:{element.git_path}"))
+    except RuntimeError as error:
+        raise HTTPException(status_code=404, detail="not on the main branch yet") from error
+
+
+@api.get("/systems/{system_id}/artifact-versions")
+def read_artifact_versions(system_id: str, session=Depends(session_scope)):
+    versions = list_artifact_versions(session, system_id)
+    return [
+        {
+            "commit_sha": version.commit_sha,
+            "tag": version.tag,
+            "run_id": version.run_id,
+            "approval_status": version.approval_status,
+            "approved_by": version.approved_by,
+            "created_at": version.created_at,
+        }
+        for version in versions
+    ]
+
+
+app.include_router(api)
 
 
 def signature_matches(body, signature):
@@ -60,7 +136,7 @@ def approve(head_sha, merge_sha):
         version = get_artifact_version(session, head_sha)
         if version is None:
             raise HTTPException(status_code=404, detail="no artifact version for that commit")
-        if version.approval_status == "approved":  # type: ignore
+        if version.approval_status == "approved":
             return {"status": "already approved"}
 
         set_approval(session, head_sha, "approved")

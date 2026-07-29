@@ -1,10 +1,12 @@
 from fastapi.testclient import TestClient
 
 from backend import api, jobs
+from backend.config import require
 from backend.db import create_session
 from backend.repository.jobs import get_job
 
 client = TestClient(api.app)
+AUTH = {"X-API-Key": require("API_KEY")}
 
 
 def status_of(job_id):
@@ -17,7 +19,7 @@ def status_of(job_id):
 
 def test_trigger_returns_a_job_id_immediately(monkeypatch):
     monkeypatch.setattr(api, "run_job", lambda *args: None)
-    response = client.post("/systems/shiptrack/ingest")
+    response = client.post("/systems/shiptrack/ingest", headers=AUTH)
     assert response.status_code == 200
     assert response.json()["status"] == "queued"
     assert isinstance(response.json()["job_id"], int)
@@ -25,7 +27,7 @@ def test_trigger_returns_a_job_id_immediately(monkeypatch):
 
 def test_successful_run_ends_in_succeeded(monkeypatch):
     monkeypatch.setattr(jobs, "run_as_is_ingestion", lambda system_id, evidence_path: None)
-    job_id = client.post("/systems/shiptrack/ingest").json()["job_id"]
+    job_id = client.post("/systems/shiptrack/ingest", headers=AUTH).json()["job_id"]
 
     jobs.run_job(job_id, "shiptrack", "./test-fixtures/evidence")
 
@@ -40,7 +42,7 @@ def test_crash_ends_in_failed_with_an_error_message(monkeypatch):
         raise RuntimeError("validation found 3 violations, not committing")
 
     monkeypatch.setattr(jobs, "run_as_is_ingestion", boom)
-    job_id = client.post("/systems/shiptrack/ingest").json()["job_id"]
+    job_id = client.post("/systems/shiptrack/ingest", headers=AUTH).json()["job_id"]
 
     jobs.run_job(job_id, "shiptrack", "./test-fixtures/evidence")
 
