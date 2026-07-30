@@ -105,6 +105,7 @@ def read_artifact_versions(system_id: str, session=Depends(session_scope)):
     return [
         {
             "commit_sha": version.commit_sha,
+            "phase": version.phase,
             "tag": version.tag,
             "run_id": version.run_id,
             "approval_status": version.approval_status,

@@ -43,9 +43,11 @@ export type Job = {
 
 export type ArtifactVersion = {
   commit_sha: string
+  phase: string
   tag: string | null
   run_id: string | null
   approval_status: string
+  created_at: string
 }
 
 async function request(path: string, options: RequestInit = {}) {
