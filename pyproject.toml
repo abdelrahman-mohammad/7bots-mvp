@@ -74,6 +74,7 @@ reconcile = "python -m agents.reconciler shiptrack"
 validate = "python -m agents.validator shiptrack"
 ingest = "python -m backend.orchestrator"
 serve = "uvicorn backend.api:app --reload --port 8000"
+accept = "python -m backend.acceptance shiptrack"
 
 [tool.poe.tasks.lint]
 sequence = ["ruff check .", "black --check ."]
